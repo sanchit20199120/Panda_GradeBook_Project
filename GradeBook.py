@@ -1,8 +1,8 @@
 import pandas as pd
 from pathlib import Path
 
-Dir=Path(__file__).parent
-Data_file=Dir/"Data"
+Dir = Path(__file__).parent
+Data_file = Dir/"Data"
 
 
 roster = pd.read_csv(Data_file/"roster.csv",
@@ -24,4 +24,19 @@ for file_path in Data_file.glob('quiz_*_grades.csv'):
                        index_col=["Email"],
                        usecols=["Email", "Grade"]).rename(columns={"Grade": quiz_name})
 
-    quiz_grades=pd.concat([quiz_grades, quiz], axis=1, sort=True)
+    quiz_grades = pd.concat([quiz_grades, quiz], axis=1, sort=True)
+
+# merging
+
+merge_data = pd.merge(roster,
+                      hw_exam_grades,
+                      left_index=True,
+                      right_index=True
+                      )
+final_data = pd.merge(merge_data,
+                      quiz_grades,
+                      left_on="Email Address",
+                      right_index=True
+                      )
+final_data = final_data.fillna(0)
+print(final_data)
