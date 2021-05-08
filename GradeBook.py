@@ -4,6 +4,7 @@ from pathlib import Path
 Dir = Path(__file__).parent
 Data_file = Dir/"Data"
 
+# loading data from 3 different sources anf transforming data
 
 roster = pd.read_csv(Data_file/"roster.csv",
                      converters={"NetID": str.lower, "Email Address": str.lower},
@@ -39,4 +40,22 @@ final_data = pd.merge(merge_data,
                       right_index=True
                       )
 final_data = final_data.fillna(0)
-print(final_data)
+
+# calculating exam score
+# loop over exam score and range is 1,4 beacuse there are only 3 exam in total
+
+
+for n in range(1, 4):
+    final_data[f"Exam {n} Score"] = (
+        final_data[f"Exam {n}"] / final_data[f"Exam {n} - Max Points"]
+    )
+
+
+# calculating homework Score
+final_data["sum_homework_score"] = final_data.filter(regex=r"^Homework \d\d?$", axis=1).sum(axis=1)
+final_data["sum_Homework_Max_Points"] = final_data.filter(regex=r"^Homework \d\d? -", axis=1).sum(axis=1)
+final_data["Total Homework"]= (final_data["sum_homework_score"]/final_data["sum_Homework_Max_Points"])
+
+print(final_data.columns)
+print(final_data[["sum_homework_score","sum_Homework_Max_Points","Total Homework"]])
+
