@@ -1,5 +1,13 @@
 import pandas as pd
 from pathlib import Path
+from sqlalchemy import create_engine
+import mysql.connector
+cnx = mysql.connector.connect(user='root', password='20Sep199120@',
+                              host='localhost',
+                              database='grades',
+                              )
+cnx.close()
+
 
 Dir = Path(__file__).parent
 Data_file = Dir/"Data"
@@ -52,10 +60,25 @@ for n in range(1, 4):
 
 
 # calculating homework Score
-final_data["sum_homework_score"] = final_data.filter(regex=r"^Homework \d\d?$", axis=1).sum(axis=1)
-final_data["sum_Homework_Max_Points"] = final_data.filter(regex=r"^Homework \d\d? -", axis=1).sum(axis=1)
-final_data["Total Homework"]= (final_data["sum_homework_score"]/final_data["sum_Homework_Max_Points"])
 
-print(final_data.columns)
-print(final_data[["sum_homework_score","sum_Homework_Max_Points","Total Homework"]])
+
+homework_scores = final_data.filter(regex=r"^Homework \d\d?$", axis=1)
+homework_max_points = final_data.filter(regex=r"^Homework \d\d? -", axis=1)
+
+
+sum_of_hw_scores = homework_scores.sum(axis=1)
+sum_of_hw_max = homework_max_points.sum(axis=1)
+final_data["Total Homework"] = sum_of_hw_scores / sum_of_hw_max
+
+hw_max_renamed = homework_max_points.set_axis(homework_scores.columns, axis=1,inplace=True)
+
+average_hw_scores = (homework_scores / hw_max_renamed).sum(axis=1)
+
+final_data["Average Homework"] = average_hw_scores / homework_scores.shape[1]
+
+print(final_data)
+
+
+
+
 
