@@ -61,10 +61,7 @@ for n in range(1, 4):
 
 # calculating homework Score
 
-
 homework_scores = final_data.filter(regex=r"^Homework \d\d?$", axis=1)
-
-
 homework_max_points = final_data.filter(regex=r"^Homework \d\d? -", axis=1)
 
 sum_of_hw_scores = homework_scores.sum(axis=1)
@@ -76,19 +73,35 @@ final_data["Total Homework"] = sum_of_hw_scores / sum_of_hw_max
 hw_max_renamed = homework_max_points.set_axis(homework_scores.columns, axis=1,inplace=False)
 
 average_hw_scores = (homework_scores / hw_max_renamed).sum(axis=1)
+
 final_data["Average Homework"] = average_hw_scores / homework_scores.shape[1]
-print(final_data.columns)
+
 
 final_data["Homework Score"] = final_data[
     ["Total Homework", "Average Homework"]
 ].max(axis=1)
 
-print(final_data.columns)
+
+# calculating quiz score
 
 
+quiz_scores = final_data.filter(regex=r"^Quiz \d$", axis=1)
 
+quiz_max_points = pd.Series(
+    {"Quiz 1": 11, "Quiz 2": 15, "Quiz 3": 17, "Quiz 4": 14, "Quiz 5": 12}
+)
+print(quiz_scores)
+print(quiz_max_points)
+sum_of_quiz_scores = quiz_scores.sum(axis=1)
+sum_of_quiz_max = quiz_max_points.sum()
+final_data["Total Quizzes"] = sum_of_quiz_scores / sum_of_quiz_max
 
+average_quiz_scores = (quiz_scores / quiz_max_points).sum(axis=1)
+final_data["Average Quizzes"] = average_quiz_scores / quiz_scores.shape[1]
 
+final_data["Quiz Score"] = final_data[
+    ["Total Quizzes", "Average Quizzes"]
+].max(axis=1)
 
 
 
