@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+import numpy as np
 from sqlalchemy import create_engine
 import mysql.connector
 cnx = mysql.connector.connect(user='root', password='20Sep199120@',
@@ -90,8 +91,7 @@ quiz_scores = final_data.filter(regex=r"^Quiz \d$", axis=1)
 quiz_max_points = pd.Series(
     {"Quiz 1": 11, "Quiz 2": 15, "Quiz 3": 17, "Quiz 4": 14, "Quiz 5": 12}
 )
-print(quiz_scores)
-print(quiz_max_points)
+
 sum_of_quiz_scores = quiz_scores.sum(axis=1)
 sum_of_quiz_max = quiz_max_points.sum()
 final_data["Total Quizzes"] = sum_of_quiz_scores / sum_of_quiz_max
@@ -104,7 +104,50 @@ final_data["Quiz Score"] = final_data[
 ].max(axis=1)
 
 
+weightings = pd.Series(
+    {
+        "Exam 1 Score": 0.05,
+        "Exam 2 Score": 0.1,
+        "Exam 3 Score": 0.15,
+        "Quiz Score": 0.30,
+        "Homework Score": 0.4,
+    }
+)
+
+final_data["Final Score"] = (final_data[weightings.index] * weightings).sum(
+    axis=1
+)
+
+final_data["Ceiling Score"] = np.ceil(final_data["Final Score"] * 100)
 
 
+grades = {
+    90: "A",
+    80: "B",
+    70: "C",
+    60: "D",
+    0: "F",
+}
+
+def grade_mapping(value):
+    for key, letter in grades.items():
+        if value >= key:
+            return letter
+
+
+letter_grades = final_data["Ceiling Score"].map(grade_mapping)
+final_data["Final Grade"] = pd.Categorical(
+    letter_grades, categories=grades.values(), ordered=True
+)
+ # grouping
+
+for section, table in final_data.groupby("Section"):
+    section_file = Data_file / f"Section {section} Grades.csv"
+    num_students = table.shape[0]
+    print(
+        f"In Section {section} there are {num_students} students saved to "
+        f"file {section_file}."
+    )
+    table.sort_values(by=["Last Name", "First Name"]).to_csv(section_file)
 
 
