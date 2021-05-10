@@ -3,17 +3,22 @@ from pathlib import Path
 import numpy as np
 from sqlalchemy import create_engine
 import mysql.connector
-cnx = mysql.connector.connect(user='root', password='20Sep199120@',
-                              host='localhost',
-                              database='grades',
-                              )
-cnx.close()
 
+
+MYSQL_USER = 'root'
+MYSQL_PASSWORD = '20Sep199120@'
+MYSQL_HOST_IP = 'localhost'
+MYSQL_PORT = '3306'
+MYSQL_DATABASE = 'grades'
+
+engine = create_engine('mysql+mysqlconnector://'+MYSQL_USER+':'+MYSQL_PASSWORD+'@'+MYSQL_HOST_IP+':'+MYSQL_PORT+'/'
+                       + MYSQL_DATABASE, echo=False)
 
 Dir = Path(__file__).parent
+
 Data_file = Dir/"Data"
 
-# loading data from 3 different sources anf transforming data
+# loading data from 3 different sources and transforming data
 
 roster = pd.read_csv(Data_file/"roster.csv",
                      converters={"NetID": str.lower, "Email Address": str.lower},
@@ -50,8 +55,9 @@ final_data = pd.merge(merge_data,
                       )
 final_data = final_data.fillna(0)
 
-# calculating exam score
-# loop over exam score and range is 1,4 beacuse there are only 3 exam in total
+'''------------------------------------calculating exam score----------------------------------------'''
+
+# loop over exam score and range is 1,4 because there are only 3 exam in total
 
 
 for n in range(1, 4):
@@ -60,9 +66,12 @@ for n in range(1, 4):
     )
 
 
-# calculating homework Score
+'''---------------------------------------- calculating homework Score-----------------------------------'''
+
+# creating DataFrame from existing DataFrame using filter operation
 
 homework_scores = final_data.filter(regex=r"^Homework \d\d?$", axis=1)
+
 homework_max_points = final_data.filter(regex=r"^Homework \d\d? -", axis=1)
 
 sum_of_hw_scores = homework_scores.sum(axis=1)
@@ -103,6 +112,7 @@ final_data["Quiz Score"] = final_data[
     ["Total Quizzes", "Average Quizzes"]
 ].max(axis=1)
 
+# series  for  weightings
 
 weightings = pd.Series(
     {
@@ -139,7 +149,7 @@ letter_grades = final_data["Ceiling Score"].map(grade_mapping)
 final_data["Final Grade"] = pd.Categorical(
     letter_grades, categories=grades.values(), ordered=True
 )
- # grouping
+# grouping
 
 for section, table in final_data.groupby("Section"):
     section_file = Data_file / f"Section {section} Grades.csv"
@@ -149,5 +159,9 @@ for section, table in final_data.groupby("Section"):
         f"file {section_file}."
     )
     table.sort_values(by=["Last Name", "First Name"]).to_csv(section_file)
+
+# loading data into MySQL database
+    sql_table =f"Section_{section}_Grades"
+    table.to_sql(name=sql_table, con=engine, index=False)
 
 
